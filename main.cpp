@@ -4,12 +4,7 @@
 #include <algorithm>
 #include "rotate.h"
 
-/*
- * TODO
- * print percentage
- * get results for multiple types (use 4, 8, 24) int, double, string/vector
- * use 30%, 60% and 90%
- */
+using namespace std::chrono;
 
 template <typename I, typename O>
 O copy(I f_i, I l_i, O f_o)
@@ -19,23 +14,23 @@ O copy(I f_i, I l_i, O f_o)
 }
 
 struct timer {
-    std::chrono::time_point<std::chrono::high_resolution_clock> _start;
+    using clock = steady_clock;
+    steady_clock::time_point _start;
 
     void start()
     {
-        _start = std::chrono::high_resolution_clock::now();
+        _start = clock::now();
     }
 
-    double stop()
+    nanoseconds stop()
     {
-        auto end = std::chrono::high_resolution_clock::now();
-        auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(end - _start);
-        return delta.count();
+        steady_clock::time_point end = steady_clock::now();
+        return duration_cast<nanoseconds>(end - _start);
     }
 };
 
 template <typename T>
-double time_rotate(T* f, T* m, T* l, T* (*rotate)(T*, T*, T*), T* buffer, size_t n)
+nanoseconds time_rotate(T* f, T* m, T* l, T* (*rotate)(T*, T*, T*), T* buffer, size_t n)
 {
     timer t;
     t.start();
@@ -80,7 +75,7 @@ void test_rotate(size_t min_size, size_t max_size, double percent, G gen)
         T* data = new T[size];
         for (size_t i = 0; i < number_of_rotates; ++i) {
             T* m = data + size_t(size * percent);
-            double time = time_rotate(data, m, data + size, f_pointers[i], buffer, n);
+            double time = time_rotate(data, m, data + size, f_pointers[i], buffer, n).count();
             time /= (double(size * n));
             std::cout << std::setw(width) << std::fixed << std::setprecision(0) << time;
         }
