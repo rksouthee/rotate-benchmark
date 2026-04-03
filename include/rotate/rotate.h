@@ -4,8 +4,13 @@
 
 namespace rks {
 template <typename I>
-[[nodiscard]] I rotate(I first, I middle, I last)
+// TODO: Specify concept requirements
+[[nodiscard]] I three_reverse(I first, I middle, I last)
 {
-    return std::rotate(first, middle, last);
+    // TODO: Implement our own reverse to guarantee we're using vector instructions when possible.
+    std::reverse(first, middle);
+    std::reverse(middle, last);
+    std::reverse(first, last);
+    return first + (last - middle);
 }
 } // namespace rks
