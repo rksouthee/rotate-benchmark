@@ -1,16 +1,36 @@
+#include "rotate/functors.h"
 #include "rotate/rotate.h"
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
+#include <numeric>
 
-TEST(RotateTest, ThreeReverse)
+namespace {
+template <class Impl>
+void expect_rotate()
 {
-    std::array got = {1, 3, 1, 4, 1, 5};
-    std::array expected = got;
-    constexpr std::ptrdiff_t k = 3;
-    auto got_it = rks::three_reverse(std::begin(got), std::begin(got) + k, std::end(got));
-    auto expected_it = std::rotate(std::begin(expected), std::begin(expected) + k, std::end(expected));
-    EXPECT_EQ(got_it - std::begin(got), expected_it - std::begin(expected));
-    EXPECT_EQ(got, expected);
+    constexpr std::size_t size = 21;
+    for (std::size_t i = 0; i < size; ++i)
+    {
+        std::array<int, size> got;
+        std::ranges::iota(got, 0);
+        std::array expected = got;
+        auto got_it = Impl{}(std::begin(got), std::begin(got) + i, std::end(got));
+        auto expected_it = std::rotate(std::begin(expected), std::begin(expected) + i, std::end(expected));
+        EXPECT_EQ(got_it - std::begin(got), expected_it - std::begin(expected));
+        EXPECT_EQ(got, expected);
+    }
 }
+} // namespace
+
+#define ROTATE_TEST(impl)                                                                                              \
+    TEST(RotateTest, impl)                                                                                             \
+    {                                                                                                                  \
+        expect_rotate<rks::impl>();                                                                                    \
+    }
+
+ROTATE_TEST(ThreeReverse)
+ROTATE_TEST(Forward)
+ROTATE_TEST(ForwardOptimised)

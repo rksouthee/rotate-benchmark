@@ -9,6 +9,8 @@ target_sources(rotate
 	BASE_DIRS include
 	FILES
 	include/rotate/rotate.h
+	include/rotate/functors.h
+	include/rotate/algorithm.h
 )
 
 add_subdirectory(benchmark)

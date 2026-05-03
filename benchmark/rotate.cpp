@@ -1,3 +1,6 @@
+#include "utility.h"
+
+#include "rotate/functors.h"
 #include "rotate/rotate.h"
 
 #include <benchmark/benchmark.h>
@@ -12,59 +15,6 @@
 #include <cstdint>
 
 namespace {
-struct StdRotate
-{
-    template <typename I>
-    I operator()(I first, I middle, I last) const
-    {
-        return std::rotate(first, middle, last);
-    }
-};
-
-struct ThreeReverse
-{
-    template <typename I>
-    I operator()(I first, I middle, I last) const
-    {
-        return rks::three_reverse(first, middle, last);
-    }
-};
-
-struct Trivial64
-{
-    std::uint64_t values[8];
-};
-
-void fill(std::vector<std::uint32_t>& v)
-{
-    for (std::size_t i = 0; i < v.size(); ++i)
-    {
-        v[i] = static_cast<std::uint32_t>(i);
-    }
-}
-
-void fill(std::vector<std::string>& v)
-{
-    for (std::size_t i = 0; i < v.size(); ++i)
-    {
-        // TODO: Should we avoid Small String Optimisation
-        v[i] = "string " + std::to_string(i);
-    }
-}
-
-void fill(std::vector<Trivial64>& v)
-{
-    for (std::size_t i = 0; i < v.size(); ++i)
-    {
-        Trivial64& value = v[i];
-        constexpr std::size_t size = std::size(value.values);
-        for (std::size_t j = 0; j < size; ++j)
-        {
-            value.values[j] = (i * size) + j;
-        }
-    }
-}
-
 enum class Mode
 {
     k_one = 0,
@@ -112,16 +62,16 @@ void BM_rotate(benchmark::State& state)
         k = 0;
     }
 
-    const auto first = v.begin();
-    const auto last = v.end();
+    T* first = v.data();
+    T* last = first + n;
 
     const Impl impl{};
     for (auto _ : state)
     {
         benchmark::DoNotOptimize(v.data());
 
-        impl(first, first + k, last);
-        impl(first, first + (n - k), last);
+        (void)impl(first, first + k, last);
+        (void)impl(first, first + (n - k), last);
 
         benchmark::ClobberMemory();
     }
@@ -132,7 +82,7 @@ void BM_rotate(benchmark::State& state)
 void rotate_args(benchmark::internal::Benchmark* b)
 {
     // TODO: Bigger sizes
-    for (int n : {8, 16, 32, 64, 128, 256, 1024, 4096, 16384})
+    for (int n : {8, 16, 32, 64, 128, 256, 1024, 4096, 16384, 2097152})
     {
         for (int mode = 0; mode <= 4; ++mode)
         {
@@ -146,8 +96,10 @@ void rotate_args(benchmark::internal::Benchmark* b)
     BENCHMARK_TEMPLATE(BM_rotate, impl, Trivial64)->Apply(rotate_args);                                                \
     BENCHMARK_TEMPLATE(BM_rotate, impl, std::string)->Apply(rotate_args)
 
-ROTATE_BENCHMARK(StdRotate);
-ROTATE_BENCHMARK(ThreeReverse);
+ROTATE_BENCHMARK(rks::StdRotate);
+ROTATE_BENCHMARK(rks::ThreeReverse);
+ROTATE_BENCHMARK(rks::Forward);
+ROTATE_BENCHMARK(rks::ForwardOptimised);
 } // namespace
 
 BENCHMARK_MAIN();
